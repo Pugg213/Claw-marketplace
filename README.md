@@ -10,6 +10,14 @@
 - 👤 Личные кабинеты покупателя и продавца
 - 📊 Статистика продаж
 
+## One‑click deploy (Vercel)
+
+1) Нажми Deploy и выбери/создай Postgres (Neon/Supabase) + заполни env.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Pugg213/Claw-marketplace)
+
+> Важно: сборка на Vercel запускает `prisma migrate deploy` автоматически (см. `vercel-build`).
+
 ## Быстрый старт
 
 ### 1. Клонирование
