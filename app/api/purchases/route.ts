@@ -6,6 +6,35 @@ import { oxapay } from '@/lib/oxapay'
 import { v4 as uuidv4 } from 'uuid'
 import { getAuthUser } from '@/lib/auth'
 
+export async function GET(request: NextRequest) {
+  try {
+    const auth = getAuthUser(request)
+    if (!auth) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'auth required' } },
+        { status: 401 }
+      )
+    }
+
+    const items = await prisma.purchase.findMany({
+      where: { buyerId: auth.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        agent: { select: { id: true, title: true, archiveUrl: true } },
+      },
+    })
+
+    return NextResponse.json({ purchases: items })
+  } catch (e) {
+    console.error('GET /api/purchases error', e)
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
