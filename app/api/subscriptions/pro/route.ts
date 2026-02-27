@@ -6,6 +6,7 @@ export const runtime = 'nodejs'
 import { getAuthUser } from '@/lib/auth'
 import { oxapay } from '@/lib/oxapay'
 import { v4 as uuidv4 } from 'uuid'
+import { getBaseUrl } from '@/lib/base-url'
 
 export async function POST(request: NextRequest) {
   const auth = getAuthUser(request)
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   const amount = parseFloat(process.env.PRO_PRICE_USDT || '10')
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const baseUrl = getBaseUrl(request)
   const orderId = `sub:${auth.userId}:${uuidv4()}`
 
   const payment = await oxapay.createPayment({

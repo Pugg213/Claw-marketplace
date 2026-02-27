@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { oxapay } from '@/lib/oxapay'
 import { v4 as uuidv4 } from 'uuid'
 import { getAuthUser } from '@/lib/auth'
+import { getBaseUrl } from '@/lib/base-url'
 
 export async function GET(request: NextRequest) {
   try {
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create Oxapay payment
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = getBaseUrl(request)
     const payment = await oxapay.createPayment({
       amount: price,
       orderId: `${purchase.id}:${orderId}`,
