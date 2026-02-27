@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 import { prisma } from '@/lib/prisma'
+import { oxapay } from '@/lib/oxapay'
 
 export async function POST(request: NextRequest) {
   try {
-    // Simple shared-secret verification (minimum viable)
-    const secret = process.env.OXAPAY_WEBHOOK_SECRET || ''
-    if (secret) {
-      const got = request.headers.get('x-oxapay-webhook-secret') || ''
-      if (got !== secret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-    }
-
     const body = await request.json()
-
-    const { paymentId, status, orderId } = body
+    const { paymentId, orderId } = body
 
     if (!paymentId || !orderId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -35,37 +28,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
     }
 
-    // Verify paymentId matches the one we issued
-    if (purchase.paymentId && purchase.paymentId !== paymentId) {
-      return NextResponse.json({ error: 'paymentId mismatch' }, { status: 400 })
-    }
-
-    const paid = status === 'Paid' || status === 'Complete' || status === 'Completed'
-    const failed = status === 'Failed' || status === 'Expired'
-
     // Idempotency: if already completed, do nothing
     if (purchase.status === 'COMPLETED') {
       return NextResponse.json({ success: true, already: true })
     }
 
-    if (paid) {
-      await prisma.purchase.update({
-        where: { id: purchaseId },
-        data: { status: 'COMPLETED' }
-      })
+    // Verify payment via OxaPay API (more secure than trusting webhook body)
+    try {
+      const paymentInfo = await oxapay.checkPayment(paymentId)
+      
+      if (paymentInfo.errorCode !== 0) {
+        console.error('Oxapay checkPayment error:', paymentInfo.message)
+        return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 })
+      }
 
-      await prisma.agent.update({
-        where: { id: purchase.agentId },
-        data: { downloads: { increment: 1 } }
-      })
-    } else if (failed) {
-      await prisma.purchase.update({
-        where: { id: purchaseId },
-        data: { status: 'FAILED' }
-      })
+      const paymentStatus = paymentInfo.result?.paymentStatus
+      const amountPaid = parseFloat(paymentInfo.result?.amountPaid || '0')
+      const amountExpected = parseFloat(purchase.amountUsdt.toString())
+
+      // Verify amount matches
+      if (amountPaid < amountExpected) {
+        console.error('Amount mismatch:', amountPaid, amountExpected)
+        return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 })
+      }
+
+      const paid = paymentStatus === 'Paid' || paymentStatus === 'Complete' || paymentStatus === 'Completed'
+
+      if (paid) {
+        await prisma.purchase.update({
+          where: { id: purchaseId },
+          data: { status: 'COMPLETED' }
+        })
+
+        await prisma.agent.update({
+          where: { id: purchase.agentId },
+          data: { downloads: { increment: 1 } }
+        })
+
+        return NextResponse.json({ success: true })
+      } else {
+        return NextResponse.json({ success: false, status: paymentStatus })
+      }
+    } catch (oxapayError) {
+      console.error('Oxapay API error:', oxapayError)
+      // If OxaPay API fails, don't mark as failed - just log and return
+      return NextResponse.json({ error: 'Payment verification unavailable' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Webhook error:', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

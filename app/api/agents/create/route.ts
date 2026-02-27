@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+export const runtime = 'nodejs'
+
 import { v4 as uuidv4 } from 'uuid'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
+import { uploadToStorage } from '@/lib/storage'
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    // sellerId is taken from auth token
+
+    // Auth
     const auth = getAuthUser(request)
     if (!auth) {
       return NextResponse.json(
@@ -20,6 +22,7 @@ export async function POST(request: NextRequest) {
       )
     }
     const sellerId = auth.userId
+
     const title = formData.get('title') as string
     const description = formData.get('description') as string
     const category = formData.get('category') as string
@@ -50,18 +53,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save file
-    const uploadDir = process.env.UPLOAD_DIR || '/uploads'
+    // Upload to S3/R2
     const folderId = uuidv4()
-    const agentDir = join(uploadDir, 'agents', folderId)
-    await mkdir(agentDir, { recursive: true })
-    
-    const fileName = `${uuidv4()}.zip`
-    const filePath = join(agentDir, fileName)
-    const fileBuffer = await file.arrayBuffer()
-    await writeFile(filePath, Buffer.from(fileBuffer))
-
-    const archiveUrl = `/uploads/agents/${folderId}/${fileName}`
+    const fileName = `${folderId}.zip`
+    const s3Key = `agents/${fileName}`
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+    const archiveUrl = await uploadToStorage(s3Key, fileBuffer, 'application/zip')
 
     // Create agent
     const agent = await prisma.agent.create({
@@ -74,7 +71,7 @@ export async function POST(request: NextRequest) {
         priceUsdt,
         archiveUrl,
         previewJson: previewJson ? JSON.parse(previewJson) : null,
-        status: 'PUBLISHED' // Auto-publish for now, can add moderation later
+        status: 'PUBLISHED'
       }
     })
 

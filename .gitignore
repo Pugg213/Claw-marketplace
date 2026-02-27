@@ -3,5 +3,12 @@ node_modules/
 dist/
 *.log
 .env
+.env.*
+!.env.example
 uploads/
 .DS_Store
+*.pem
+docker-compose.yml
+Dockerfile
+nginx.conf
+deploy.sh

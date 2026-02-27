@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/auth'
+import { getSignedDownloadUrl } from '@/lib/storage'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Verify auth
+    const auth = getAuthUser(request)
+    if (!auth) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'auth required' } },
+        { status: 401 }
+      )
+    }
+
     const purchaseId = params.id
     
-    // Find purchase
     const purchase = await prisma.purchase.findUnique({
       where: { id: purchaseId },
       include: {
@@ -26,7 +38,14 @@ export async function GET(
       )
     }
 
-    // Check if completed
+    // Verify buyer owns this purchase
+    if (purchase.buyerId !== auth.userId) {
+      return NextResponse.json(
+        { error: { code: 'FORBIDDEN', message: 'Not your purchase' } },
+        { status: 403 }
+      )
+    }
+
     if (purchase.status !== 'COMPLETED') {
       return NextResponse.json(
         { error: { code: 'NOT_PAID', message: 'Payment not completed' } },
@@ -34,9 +53,14 @@ export async function GET(
       )
     }
 
-    // Return archive URL (in real app, generate signed URL)
+    // Generate signed URL (valid for 1 hour)
+    const urlParts = purchase.agent.archiveUrl.split('/')
+    const key = urlParts.slice(-2).join('/') // agents/folderId/file.zip
+    
+    const signedUrl = await getSignedDownloadUrl(key, 3600)
+
     return NextResponse.json({
-      downloadUrl: purchase.agent.archiveUrl,
+      downloadUrl: signedUrl,
       agent: {
         id: purchase.agent.id,
         title: purchase.agent.title,
