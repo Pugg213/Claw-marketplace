@@ -14,6 +14,7 @@ export default function HeaderClient() {
         </Link>
         <div className="flex items-center gap-6">
           <Link href="/agents" className="hover:text-indigo-400 transition">Каталог</Link>
+          <Link href="/openclaw" className="hover:text-indigo-400 transition">OpenClaw</Link>
           <Link href="/sell" className="hover:text-indigo-400 transition">Продать</Link>
           {user ? (
             <>

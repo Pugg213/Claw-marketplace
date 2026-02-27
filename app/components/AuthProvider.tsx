@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { getToken, getUser, setToken, setUser } from '@/lib/api-client'
+import { apiFetch, getToken, getUser, setToken, setUser } from '@/lib/api-client'
 
 type AuthState = {
   token: string | null
@@ -20,6 +20,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTok(getToken())
     setUsr(getUser())
   }, [])
+
+  // Refresh server-side user (plan/proUntil) after load
+  useEffect(() => {
+    if (!token) return
+    ;(async () => {
+      try {
+        const me = await apiFetch<any>('/api/me')
+        if (me?.user) {
+          setUser(me.user)
+          setUsr(me.user)
+        }
+      } catch {
+        // ignore
+      }
+    })()
+  }, [token])
 
   const value = useMemo<AuthState>(() => ({
     token,
