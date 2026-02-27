@@ -15,9 +15,10 @@ export default function DashboardPage() {
     ;(async () => {
       setLoading(true)
       try {
-        // simple list: query purchases by buyerId not implemented; reuse prisma via new endpoint later.
-        // For now: show empty.
-        setPurchases([])
+        const data = await apiFetch<any>('/api/purchases')
+        setPurchases(data.purchases || [])
+      } catch (e: any) {
+        alert(e.message)
       } finally {
         setLoading(false)
       }
@@ -47,9 +48,25 @@ export default function DashboardPage() {
         ) : (
           <ul className="space-y-3">
             {purchases.map(p => (
-              <li key={p.id} className="flex items-center justify-between">
-                <span>{p.agent.title}</span>
-                <Link href={`/api/purchases/${p.id}/download`} className="text-primary">Скачать</Link>
+              <li key={p.id} className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-semibold">{p.agent.title}</div>
+                  <div className="text-xs text-slate-400">{p.status}</div>
+                </div>
+                <button
+                  disabled={p.status !== 'COMPLETED'}
+                  className="text-primary disabled:opacity-40"
+                  onClick={async () => {
+                    try {
+                      const r = await apiFetch<any>(`/api/purchases/${p.id}/download`)
+                      window.location.href = r.downloadUrl
+                    } catch (e: any) {
+                      alert(e.message)
+                    }
+                  }}
+                >
+                  Скачать
+                </button>
               </li>
             ))}
           </ul>
