@@ -2,17 +2,32 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api-client'
+import { useAuth } from '@/app/components/AuthProvider'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // In real app, send magic link
-    alert('Ссылка для входа отправлена на email!')
-    setLoading(false)
+    try {
+      const r = await apiFetch<any>('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      login(r.token, r.user)
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -49,6 +64,16 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:border-primary focus:outline-none"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm text-slate-400 mb-2">Пароль</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:border-primary focus:outline-none"
                 required
               />

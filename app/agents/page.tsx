@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { apiFetch } from '@/lib/api-client'
 
 const categories = [
   { icon: '📧', name: 'Email', slug: 'email' },
@@ -12,36 +16,53 @@ const categories = [
 ]
 
 export default function AgentsPage() {
+  const [agents, setAgents] = useState<any[]>([])
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState('newest')
+  const [loading, setLoading] = useState(false)
+
+  const query = useMemo(() => {
+    const sp = new URLSearchParams()
+    if (category && category !== 'all') sp.set('category', category)
+    if (search) sp.set('search', search)
+    if (sort) sp.set('sort', sort)
+    return sp.toString()
+  }, [search, category, sort])
+
+  useEffect(() => {
+    ;(async () => {
+      setLoading(true)
+      try {
+        const data = await apiFetch<any>(`/api/agents?${query}`)
+        setAgents(data.agents || [])
+      } catch (e: any) {
+        alert(e.message)
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [query])
+
   return (
     <div className="container py-8">
       <div className="flex gap-8">
-        {/* Sidebar */}
         <aside className="w-64 flex-shrink-0">
           <div className="bg-surface rounded-xl p-6 border border-slate-700">
             <h3 className="text-lg font-semibold mb-4">Категории</h3>
             <div className="space-y-2">
-              <Link 
-                href="/agents" 
-                className="block py-2 px-3 rounded-lg hover:bg-slate-700 transition"
-              >
-                Все категории
-              </Link>
+              <button onClick={() => setCategory('all')} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-slate-700 transition ${category==='all'?'bg-slate-700':''}`}>Все категории</button>
               {categories.map(cat => (
-                <Link
-                  key={cat.slug}
-                  href={`/agents?category=${cat.slug}`}
-                  className="block py-2 px-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-2"
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.name}</span>
-                </Link>
+                <button key={cat.slug} onClick={() => setCategory(cat.slug)} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-2 ${category===cat.slug?'bg-slate-700':''}`}>
+                  <span>{cat.icon}</span><span>{cat.name}</span>
+                </button>
               ))}
             </div>
           </div>
 
           <div className="bg-surface rounded-xl p-6 border border-slate-700 mt-6">
             <h3 className="text-lg font-semibold mb-4">Сортировка</h3>
-            <select className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white">
+            <select value={sort} onChange={e=>setSort(e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white">
               <option value="newest">Новинки</option>
               <option value="popular">Популярные</option>
               <option value="price_asc">Сначала дешевые</option>
@@ -50,143 +71,33 @@ export default function AgentsPage() {
           </div>
         </aside>
 
-        {/* Main Content */}
         <div className="flex-1">
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Поиск агентов..."
-              className="w-full bg-surface border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400"
-            />
+          <div className="mb-6 flex gap-3">
+            <input value={search} onChange={e=>setSearch(e.target.value)} type="text" placeholder="Поиск агентов..." className="flex-1 bg-surface border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400" />
+            <button onClick={() => { /* effect uses query */ }} className="px-4 py-3 bg-slate-800 rounded-xl">Поиск</button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Sample agent cards - in real app these come from API */}
-            <Link href="/agents/1" className="agent-card">
-              <div className="preview">📧</div>
-              <div className="content">
-                <div className="title">AI Email Writer</div>
-                <div className="description">
-                  Профессиональный агент для написания email-писем с адаптацией под тон бренда
-                </div>
-                <div className="tags">
-                  <span className="tag">#email</span>
-                  <span className="tag">#marketing</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$49</div>
-                  <div className="stats">📥 23</div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/agents/2" className="agent-card">
-              <div className="preview">📊</div>
-              <div className="content">
-                <div className="title">Data Analyst</div>
-                <div className="description">
-                  Анализирует данные, строит графики и создаёт отчёты
-                </div>
-                <div className="tags">
-                  <span className="tag">#analytics</span>
-                  <span className="tag">#data</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$79</div>
-                  <div className="stats">📥 45</div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/agents/3" className="agent-card">
-              <div className="preview">🔍</div>
-              <div className="content">
-                <div className="title">SEO Optimizer</div>
-                <div className="description">
-                  Анализирует сайты и предлагает улучшения для SEO
-                </div>
-                <div className="tags">
-                  <span className="tag">#seo</span>
-                  <span className="tag">#marketing</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$59</div>
-                  <div className="stats">📥 18</div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/agents/4" className="agent-card">
-              <div className="preview">🎨</div>
-              <div className="content">
-                <div className="title">Image Generator</div>
-                <div className="description">
-                  Генерирует промпты для AI-генераторов изображений
-                </div>
-                <div className="tags">
-                  <span className="tag">#design</span>
-                  <span className="tag">#ai</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$39</div>
-                  <div className="stats">📥 67</div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/agents/5" className="agent-card">
-              <div className="preview">💬</div>
-              <div className="content">
-                <div className="title">Customer Support</div>
-                <div className="description">
-                  AI агент для обработки обращений клиентов
-                </div>
-                <div className="tags">
-                  <span className="tag">#chat</span>
-                  <span className="tag">#support</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$89</div>
-                  <div className="stats">📥 34</div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/agents/6" className="agent-card">
-              <div className="preview">⚙️</div>
-              <div className="content">
-                <div className="title">Task Automator</div>
-                <div className="description">
-                  Автоматизирует рутинные задачи
-                </div>
-                <div className="tags">
-                  <span className="tag">#automation</span>
-                  <span className="tag">#productivity</span>
-                </div>
-                <div className="footer">
-                  <div className="price">$69</div>
-                  <div className="stats">📥 29</div>
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex justify-center gap-2 mt-12">
-            <button className="px-4 py-2 bg-surface border border-slate-700 rounded-lg hover:bg-slate-700 transition">
-              ←
-            </button>
-            <button className="px-4 py-2 bg-primary rounded-lg">1</button>
-            <button className="px-4 py-2 bg-surface border border-slate-700 rounded-lg hover:bg-slate-700 transition">
-              2
-            </button>
-            <button className="px-4 py-2 bg-surface border border-slate-700 rounded-lg hover:bg-slate-700 transition">
-              3
-            </button>
-            <button className="px-4 py-2 bg-surface border border-slate-700 rounded-lg hover:bg-slate-700 transition">
-              →
-            </button>
-          </div>
+          {loading ? (
+            <div className="text-slate-400">Загрузка...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {agents.map(a => (
+                <Link key={a.id} href={`/agents/${a.id}`} className="agent-card">
+                  <div className="preview">🤖</div>
+                  <div className="content">
+                    <div className="title">{a.title}</div>
+                    <div className="description">{a.description}</div>
+                    <div className="tags">{(a.tags||[]).slice(0,3).map((t:string)=>(<span key={t} className="tag">#{t}</span>))}</div>
+                    <div className="footer">
+                      <div className="price">${Number(a.priceUsdt).toFixed(0)}</div>
+                      <div className="stats">📥 {a.downloads}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+              {agents.length === 0 && <div className="text-slate-400">Ничего не найдено</div>}
+            </div>
+          )}
         </div>
       </div>
     </div>

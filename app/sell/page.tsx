@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const categories = [
   { value: 'email', label: '📧 Email' },
@@ -22,30 +23,45 @@ export default function SellPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
 
+  const { token } = useAuth()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!token) {
+      alert('Нужно войти')
+      window.location.href = '/login'
+      return
+    }
     if (!file) {
       alert('Загрузите ZIP архив')
       return
     }
 
     setUploading(true)
-    
-    // In real app, upload to API
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('title', title)
-    formData.append('description', description)
-    formData.append('category', category)
-    formData.append('tags', tags)
-    formData.append('priceUsdt', price)
-    // formData.append('sellerId', user.id)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('title', title)
+      formData.append('description', description)
+      formData.append('category', category)
+      formData.append('tags', tags)
+      formData.append('priceUsdt', price)
 
-    // Simulate upload
-    await new Promise(r => setTimeout(r, 2000))
-    
-    alert('Агент успешно опубликован!')
-    setUploading(false)
+      const res = await fetch('/api/agents/create', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error?.message || 'Upload failed')
+
+      alert('Агент опубликован!')
+      window.location.href = '/agents'
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
