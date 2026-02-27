@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:css && next build",
-    "build:css": "tailwindcss -i ./app/globals.css -o ./app/styles.css",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "npx prisma db push",

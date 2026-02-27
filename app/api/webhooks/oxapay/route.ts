@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
+    // Simple shared-secret verification (minimum viable)
+    const secret = process.env.OXAPAY_WEBHOOK_SECRET || ''
+    if (secret) {
+      const got = request.headers.get('x-oxapay-webhook-secret') || ''
+      if (got !== secret) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
     const body = await request.json()
-    
-    // Verify it's from Oxapay (you might want to add signature verification)
-    const { paymentId, status, amount, orderId } = body
+
+    const { paymentId, status, orderId } = body
 
     if (!paymentId || !orderId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -25,20 +35,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
     }
 
-    // Check payment status
-    if (status === 'Paid' || status === 'Complete' || status === 'Completed') {
-      // Update purchase status
+    // Verify paymentId matches the one we issued
+    if (purchase.paymentId && purchase.paymentId !== paymentId) {
+      return NextResponse.json({ error: 'paymentId mismatch' }, { status: 400 })
+    }
+
+    const paid = status === 'Paid' || status === 'Complete' || status === 'Completed'
+    const failed = status === 'Failed' || status === 'Expired'
+
+    // Idempotency: if already completed, do nothing
+    if (purchase.status === 'COMPLETED') {
+      return NextResponse.json({ success: true, already: true })
+    }
+
+    if (paid) {
       await prisma.purchase.update({
         where: { id: purchaseId },
         data: { status: 'COMPLETED' }
       })
 
-      // Increment download count
       await prisma.agent.update({
         where: { id: purchase.agentId },
         data: { downloads: { increment: 1 } }
       })
-    } else if (status === 'Failed' || status === 'Expired') {
+    } else if (failed) {
       await prisma.purchase.update({
         where: { id: purchaseId },
         data: { status: 'FAILED' }

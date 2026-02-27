@@ -41,6 +41,7 @@ model User {
   username      String?
   avatar        String?
   walletAddress String?
+  passwordHash  String?   @db.Text
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

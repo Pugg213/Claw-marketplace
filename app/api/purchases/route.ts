@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { oxapay } from '@/lib/oxapay'
 import { v4 as uuidv4 } from 'uuid'
+import { getAuthUser } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agentId, buyerId } = body
+    const { agentId } = body
 
-    if (!agentId || !buyerId) {
+    if (!agentId) {
       return NextResponse.json(
-        { error: { code: 'VALIDATION_ERROR', message: 'agentId and buyerId required' } },
+        { error: { code: 'VALIDATION_ERROR', message: 'agentId required' } },
         { status: 400 }
       )
     }
+
+    const auth = getAuthUser(request)
+    if (!auth) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'auth required' } },
+        { status: 401 }
+      )
+    }
+    const buyerId = auth.userId
+
 
     // Get agent
     const agent = await prisma.agent.findUnique({

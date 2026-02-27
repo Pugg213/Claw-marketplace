@@ -16,23 +16,21 @@ services:
       timeout: 3s
       retries: 20
 
-  backend:
-    image: node:20-alpine
+  web:
+    build: .
     restart: unless-stopped
-    working_dir: /app
-    command: sh -c "npm install && npm run build && npm start"
     ports:
       - "3002:3000"
     environment:
-      - DATABASE_URL=postgresql://claw_mp:claw_mp_pass@postgres:5432/claw_marketplace
-      - OXAPAY_MERCHANT_KEY=BPYY4G-AOFHZO-8SXKRR-HB0PU6
-      - OXAPAY_SELLER_KEY=UFYFKT-O9WXDN-OJ6NJI-GFOFPS
-      - PLATFORM_FEE_PERCENT=30
-      - JWT_SECRET=change-this-secure-key
-      - UPLOAD_DIR=/uploads
-      - NEXT_PUBLIC_BASE_URL=http://187.77.208.225:3002
+      DATABASE_URL: postgresql://claw_mp:claw_mp_pass@postgres:5432/claw_marketplace
+      OXAPAY_MERCHANT_KEY: ${OXAPAY_MERCHANT_KEY}
+      OXAPAY_SELLER_KEY: ${OXAPAY_SELLER_KEY}
+      OXAPAY_WEBHOOK_SECRET: ${OXAPAY_WEBHOOK_SECRET}
+      PLATFORM_FEE_PERCENT: "30"
+      JWT_SECRET: ${JWT_SECRET}
+      UPLOAD_DIR: /uploads
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     volumes:
-      - ./app:/app
       - uploads_claw:/uploads
     depends_on:
       postgres:

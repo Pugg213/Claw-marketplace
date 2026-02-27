@@ -8,7 +8,7 @@ const categories = [
   { icon: '🔍', name: 'SEO', slug: 'seo' },
   { icon: '📝', name: 'Content', slug: 'content' },
   { icon: '🤖', name: 'Automation', slug: 'automation' },
-  { icon: '�-other', name: 'Other', slug: 'other' },
+  { icon: '💡', name: 'Other', slug: 'other' },
 ]
 
 export default function Home() {
