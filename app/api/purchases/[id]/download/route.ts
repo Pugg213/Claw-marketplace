@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 
 import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
-import { getSignedDownloadUrl } from '@/lib/storage'
+import { getSignedDownloadUrlByArchiveUrl } from '@/lib/storage'
 
 export async function GET(
   request: NextRequest,
@@ -52,12 +52,7 @@ export async function GET(
         { status: 400 }
       )
     }
-
-    // Generate signed URL (valid for 1 hour)
-    const urlParts = purchase.agent.archiveUrl.split('/')
-    const key = urlParts.slice(-2).join('/') // agents/folderId/file.zip
-    
-    const signedUrl = await getSignedDownloadUrl(key, 3600)
+    const signedUrl = await getSignedDownloadUrlByArchiveUrl(purchase.agent.archiveUrl, 3600)
 
     return NextResponse.json({
       downloadUrl: signedUrl,
