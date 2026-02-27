@@ -18,6 +18,26 @@
 
 > Важно: сборка на Vercel запускает `prisma migrate deploy` автоматически (см. `vercel-build`).
 
+### Рекомендуемый путь: Vercel + Supabase Integration (почти без ручных секретов)
+
+1) Нажми Deploy (кнопка выше).
+2) Подключи интеграцию Supabase:
+   - Vercel → Integrations → Supabase → Add Integration
+   - выбери проект Supabase + проект Vercel
+   - интеграция автоматически добавит `DATABASE_URL`.
+3) Добавь вручную только это:
+
+- `SUPABASE_URL=https://<project-ref>.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY=...` *(секрет, только в Vercel env)*
+- `SUPABASE_STORAGE_BUCKET=agents`
+- `STORAGE_BACKEND=supabase`
+- `JWT_SECRET=...`
+- `OXAPAY_MERCHANT_KEY=...`
+- `OXAPAY_SELLER_KEY=...`
+- `PRO_PRICE_USDT=10`
+
+4) Redeploy.
+
 ## Быстрый старт
 
 ### 1. Клонирование
