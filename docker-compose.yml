@@ -5,47 +5,39 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: marketplace_pass
-      POSTGRES_USER: marketplace
-      POSTGRES_DB: agent_marketplace
+      POSTGRES_PASSWORD: claw_mp_pass
+      POSTGRES_USER: claw_mp
+      POSTGRES_DB: claw_marketplace
     volumes:
-      - pgdata_mp:/var/lib/postgresql/data
+      - pgdata_claw:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U marketplace -d agent_marketplace"]
+      test: ["CMD-SHELL", "pg_isready -U claw_mp -d claw_marketplace"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   backend:
-    build: .
+    image: node:20-alpine
     restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm install && npm run build && npm start"
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
-      - DATABASE_URL=postgresql://marketplace:marketplace_pass@postgres:5432/agent_marketplace
+      - DATABASE_URL=postgresql://claw_mp:claw_mp_pass@postgres:5432/claw_marketplace
       - OXAPAY_MERCHANT_KEY=BPYY4G-AOFHZO-8SXKRR-HB0PU6
       - OXAPAY_SELLER_KEY=UFYFKT-O9WXDN-OJ6NJI-GFOFPS
       - PLATFORM_FEE_PERCENT=30
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_SECRET=change-this-secure-key
       - UPLOAD_DIR=/uploads
+      - NEXT_PUBLIC_BASE_URL=http://187.77.208.225:3002
     volumes:
-      - uploads:/uploads
+      - ./app:/app
+      - uploads_claw:/uploads
     depends_on:
       postgres:
         condition: service_healthy
 
-  nginx:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - uploads:/uploads:ro
-    depends_on:
-      - backend
-
 volumes:
-  pgdata_mp:
-  uploads:
+  pgdata_claw:
+  uploads_claw:
