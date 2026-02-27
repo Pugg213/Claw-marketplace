@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  SELLER
+  ADMIN
+}
+
+enum AgentStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  telegramId    BigInt?  @unique
+  email         String?   @unique
+  username      String?
+  avatar        String?
+  walletAddress String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  agents        Agent[]
+  purchases     Purchase[]
+  payouts       Payout[]
+}
+
+model Agent {
+  id            String      @id @default(uuid())
+  sellerId      String
+  seller        User        @relation(fields: [sellerId], references: [id])
+  title         String
+  description   String      @db.Text
+  category      String
+  tags          String[]
+  priceUsdt     Decimal     @db.Decimal(10, 2)
+  archiveUrl    String
+  previewJson   Json?
+  status        AgentStatus @default(DRAFT)
+  downloads     Int         @default(0)
+  rating        Decimal     @default(0) @db.Decimal(3, 2)
+  ratingCount   Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  purchases     Purchase[]
+}
+
+model Purchase {
+  id            String         @id @default(uuid())
+  buyerId       String
+  buyer         User           @relation(fields: [buyerId], references: [id])
+  agentId       String
+  agent         Agent          @relation(fields: [agentId], references: [id])
+  amountUsdt    Decimal        @db.Decimal(10, 2)
+  platformFee    Decimal        @db.Decimal(10, 2)
+  sellerAmount  Decimal        @db.Decimal(10, 2)
+  paymentId     String?        // Oxapay payment ID
+  status        PurchaseStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+
+  @@unique([buyerId, agentId])
+}
+
+model Payout {
+  id              String        @id @default(uuid())
+  sellerId        String
+  seller          User          @relation(fields: [sellerId], references: [id])
+  amountUsdt      Decimal       @db.Decimal(10, 2)
+  walletAddress   String
+  network         String        // TRC20, ERC20, BEP20
+  txHash          String?
+  status          PayoutStatus  @default(PENDING)
+  createdAt       DateTime      @default(now())
+  completedAt     DateTime?
+}

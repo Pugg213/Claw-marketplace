@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: marketplace_pass
+      POSTGRES_USER: marketplace
+      POSTGRES_DB: agent_marketplace
+    volumes:
+      - pgdata_mp:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketplace -d agent_marketplace"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://marketplace:marketplace_pass@postgres:5432/agent_marketplace
+      - OXAPAY_MERCHANT_KEY=BPYY4G-AOFHZO-8SXKRR-HB0PU6
+      - OXAPAY_SELLER_KEY=UFYFKT-O9WXDN-OJ6NJI-GFOFPS
+      - PLATFORM_FEE_PERCENT=30
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - UPLOAD_DIR=/uploads
+    volumes:
+      - uploads:/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads:/uploads:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata_mp:
+  uploads:
