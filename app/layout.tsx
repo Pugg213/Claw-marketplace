@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from '@/app/components/AuthProvider'
 import HeaderClient from '@/app/components/HeaderClient'
+import Link from 'next/link'
 
 export default function RootLayout({
   children,
@@ -22,7 +23,7 @@ export default function RootLayout({
           <main>{children}</main>
           <footer className="border-t border-slate-800 mt-20 py-8">
             <div className="max-w-7xl mx-auto px-4 text-center text-slate-400">
-              © 2026 Agent Marketplace. Все права защищены.
+              © 2026 Agent Marketplace. Все права защищены. <Link href="/terms" className="hover:text-indigo-400">Terms</Link> | <Link href="/privacy" className="hover:text-indigo-400">Privacy</Link>
             </div>
           </footer>
         </AuthProvider>
