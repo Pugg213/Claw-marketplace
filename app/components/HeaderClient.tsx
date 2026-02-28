@@ -12,17 +12,23 @@ export default function HeaderClient() {
         <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
           🤖 Agent Marketplace
         </Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
         <div className="flex items-center gap-6">
           <Link href="/agents" className="hover:text-indigo-400 transition">Каталог</Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
           <Link href="/dashboard" className="hover:text-indigo-400 transition">Dashboard</Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
           <Link href="/sell" className="hover:text-indigo-400 transition">Продать</Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
           {user ? (
             <>
               <Link href="/account" className="hover:text-indigo-400 transition">Кабинет</Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
               <button onClick={logout} className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition">Выйти</button>
             </>
           ) : (
             <Link href="/login" className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">Войти</Link>
+          <Link href="/help" className="hover:text-indigo-400 transition">Помощь</Link>
           )}
         </div>
       </nav>
