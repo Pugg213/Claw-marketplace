@@ -44,7 +44,6 @@ export default function LoginPage() {
 
           <button className="w-full py-3 bg-[#0088cc] rounded-xl font-semibold mb-4 hover:opacity-90 transition flex items-center justify-center gap-2">
             <span>📱</span>
-            Войти через Telegram
           </button>
 
           <div className="relative my-6">
