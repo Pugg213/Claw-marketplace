@@ -47,10 +47,23 @@ export async function POST(req: NextRequest) {
     const token = signToken({ userId: user.id, role: user.role })
 
     return NextResponse.json({ user, token })
-  } catch (e) {
+  } catch (e: any) {
     console.error('register error', e)
+    const debug = process.env.DEBUG_ERRORS === '1'
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: debug ? String(e?.message || e) : 'Internal server error',
+          ...(debug
+            ? {
+                name: e?.name,
+                prismaCode: e?.code,
+                meta: e?.meta,
+              }
+            : {}),
+        },
+      },
       { status: 500 }
     )
   }
