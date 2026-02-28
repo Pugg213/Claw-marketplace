@@ -2,20 +2,5 @@
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm ci",
   "framework": "nextjs",
-  "regions": [
-    "iad1"
-  ],
-  "env": {
-    "DATABASE_URL": "@database-url",
-    "JWT_SECRET": "@jwt-secret",
-    "OXAPAY_MERCHANT_KEY": "@oxapay-merchant-key",
-    "OXAPAY_SELLER_KEY": "@oxapay-seller-key",
-    "OXAPAY_WEBHOOK_SECRET": "@oxapay-webhook-secret",
-    "NEXT_PUBLIC_BASE_URL": "@next-public-base-url",
-    "PRO_PRICE_USDT": "@pro-price-usdt",
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-    "SUPABASE_STORAGE_BUCKET": "@supabase-storage-bucket",
-    "STORAGE_BACKEND": "@storage-backend"
-  }
+  "regions": ["iad1"]
 }
