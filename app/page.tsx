@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 const categories = [
   { icon: '📧', name: 'Email', slug: 'email' },
@@ -11,10 +14,32 @@ const categories = [
   { icon: '💡', name: 'Other', slug: 'other' },
 ]
 
+type Agent = {
+  id: string
+  title: string
+  description: string
+  category: string
+  tags: string[]
+  priceUsdt: number
+  downloads: number
+}
+
 export default function Home() {
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/agents')
+      .then(r => r.json())
+      .then(data => {
+        if (data.agents) setAgents(data.agents.slice(0, 8))
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="container">
-      {/* Hero */}
       <section className="hero">
         <h1>Магазин AI Агентов</h1>
         <p>
@@ -29,21 +54,12 @@ export default function Home() {
 
         <div className="stats-bar">
           <div className="stat-item">
-            <div className="stat-value">150+</div>
+            <div className="stat-value">{agents.length}</div>
             <div className="stat-label">Агентов</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">500+</div>
-            <div className="stat-label">Покупок</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">50+</div>
-            <div className="stat-label">Продавцов</div>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
       <section>
         <h2 className="section-title">Категории</h2>
         <div className="categories">
@@ -56,92 +72,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Agents */}
       <section className="agents-section">
-        <h2 className="section-title">Популярные агенты</h2>
-        <div className="agents-grid">
-          {/* Sample agent cards */}
-          <div className="agent-card">
-            <div className="preview">📧</div>
-            <div className="content">
-              <div className="title">AI Email Writer</div>
-              <div className="description">
-                Профессиональный агент для написания email-писем с адаптацией под тон бренда
-              </div>
-              <div className="tags">
-                <span className="tag">#email</span>
-                <span className="tag">#marketing</span>
-              </div>
-              <div className="footer">
-                <div className="price">$49</div>
-                <div className="stats">📥 23</div>
-              </div>
-            </div>
+        <h2 className="section-title">Агенты</h2>
+        
+        {loading ? (
+          <div className="text-slate-400">Загрузка...</div>
+        ) : agents.length === 0 ? (
+          <div className="text-slate-400">Агентов пока нет. Будь первым!</div>
+        ) : (
+          <div className="agents-grid">
+            {agents.map(agent => (
+              <Link href={`/agents/${agent.id}`} key={agent.id} className="agent-card">
+                <div className="preview">🤖</div>
+                <div className="content">
+                  <div className="title">{agent.title}</div>
+                  <div className="description">
+                    {agent.description?.slice(0, 80)}...
+                  </div>
+                  <div className="tags">
+                    {agent.tags?.slice(0, 3).map(t => (
+                      <span key={t} className="tag">#{t}</span>
+                    ))}
+                  </div>
+                  <div className="footer">
+                    <div className="price">${agent.priceUsdt}</div>
+                    <div className="stats">📥 {agent.downloads || 0}</div>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
+        )}
 
-          <div className="agent-card">
-            <div className="preview">📊</div>
-            <div className="content">
-              <div className="title">Data Analyst</div>
-              <div className="description">
-                Анализирует данные, строит графики и создаёт отчёты
-              </div>
-              <div className="tags">
-                <span className="tag">#analytics</span>
-                <span className="tag">#data</span>
-              </div>
-              <div className="footer">
-                <div className="price">$79</div>
-                <div className="stats">📥 45</div>
-              </div>
-            </div>
+        {agents.length > 0 && (
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link href="/agents" className="btn-primary">
+              Смотреть все агенты →
+            </Link>
           </div>
-
-          <div className="agent-card">
-            <div className="preview">🔍</div>
-            <div className="content">
-              <div className="title">SEO Optimizer</div>
-              <div className="description">
-                Анализирует сайты и предлагает улучшения для SEO
-              </div>
-              <div className="tags">
-                <span className="tag">#seo</span>
-                <span className="tag">#marketing</span>
-              </div>
-              <div className="footer">
-                <div className="price">$59</div>
-                <div className="stats">📥 18</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="agent-card">
-            <div className="preview">🎨</div>
-            <div className="content">
-              <div className="title">Image Generator</div>
-              <div className="description">
-                Генерирует промпты для AI-генераторов изображений
-              </div>
-              <div className="tags">
-                <span className="tag">#design</span>
-                <span className="tag">#ai</span>
-              </div>
-              <div className="footer">
-                <div className="price">$39</div>
-                <div className="stats">📥 67</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: '32px' }}>
-          <Link href="/agents" className="btn-primary">
-            Смотреть все агенты →
-          </Link>
-        </div>
+        )}
       </section>
 
-      {/* CTA */}
       <section style={{ textAlign: 'center', marginTop: '80px', padding: '60px', background: 'linear-gradient(135deg, #1e293b, #334155)', borderRadius: '16px' }}>
         <h2 style={{ fontSize: '28px', marginBottom: '16px' }}>Хочешь продавать своих агентов?</h2>
         <p style={{ color: '#94a3b8', marginBottom: '24px' }}>
